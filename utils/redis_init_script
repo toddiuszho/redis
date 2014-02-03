@@ -1,42 +1,69 @@
-#!/bin/sh
-#
-# Simple Redis init.d script conceived to work on Linux systems
-# as it does use of the /proc filesystem.
+#/bin/sh
+#Configurations injected by install_server below....
 
-REDISPORT=6379
-EXEC=/usr/local/bin/redis-server
-CLIEXEC=/usr/local/bin/redis-cli
+EXEC="/usr/local/bin/redis-server"
+CLIEXEC="/usr/local/bin/redis-cli"
+PIDFILE="/var/run/redis/redis_6379.pid"
+CONF="/data/redis/6379.conf"
 
-PIDFILE=/var/run/redis_${REDISPORT}.pid
-CONF="/etc/redis/${REDISPORT}.conf"
+REDISPORT="6379"
+REDIS_BIND="0.0.0.0"
+
+###############
+
+# REDHAT chkconfig header
+
+# chkconfig: - 58 74
+# description: redis_6379 is the redis daemon on port 6379.
+### BEGIN INIT INFO
+# Provides: redis_6379
+# Required-Start: 
+# Required-Stop: 
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Should-Start: 
+# Should-Stop: 
+# Short-Description: start and stop redis_6379
+# Description: Redis daemon on port 6379
+### END INIT INFO
+
 
 case "$1" in
     start)
-        if [ -f $PIDFILE ]
+        if [ -f "$PIDFILE" ]
         then
                 echo "$PIDFILE exists, process is already running or crashed"
         else
-                echo "Starting Redis server..."
+                echo "Starting Redis server on port $REDISPORT ..."
                 $EXEC $CONF
         fi
         ;;
+    status)
+        if [ -f "$PIDFILE" ]
+        then
+                echo "Redis is running on port $REDISPORT"
+        else
+                echo "Redis is NOT running on port $REDISPORT"
+        fi
+        ;;
     stop)
-        if [ ! -f $PIDFILE ]
+        if [ ! -f "$PIDFILE" ]
         then
                 echo "$PIDFILE does not exist, process is not running"
         else
-                PID=$(cat $PIDFILE)
-                echo "Stopping ..."
-                $CLIEXEC -p $REDISPORT shutdown
+                PID=$(cat "$PIDFILE")
+                echo "Stopping on port $REDISPORT ..."
+                $CLIEXEC -h $REDISBIND -p $REDISPORT shutdown
                 while [ -x /proc/${PID} ]
                 do
-                    echo "Waiting for Redis to shutdown ..."
-                    sleep 1
+                    echo "Waiting for Redis to shutdown on port $REDISPORT ..."
+                    sleep 2
                 done
-                echo "Redis stopped"
+                echo "Redis stopped on port $REDISPORT"
         fi
         ;;
     *)
-        echo "Please use start or stop as first argument"
+        echo "Please use start, stop, or status as first argument"
         ;;
 esac
+

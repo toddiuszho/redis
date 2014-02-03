@@ -1,31 +1,40 @@
 
 case "$1" in
     start)
-        if [ -f $PIDFILE ]
+        if [ -f "$PIDFILE" ]
         then
                 echo "$PIDFILE exists, process is already running or crashed"
         else
-                echo "Starting Redis server..."
+                echo "Starting Redis server on port $REDISPORT ..."
                 $EXEC $CONF
         fi
         ;;
+    status)
+        if [ -f "$PIDFILE" ]
+        then
+                echo "Redis is running on port $REDISPORT"
+        else
+                echo "Redis is NOT running on port $REDISPORT"
+        fi
+        ;;
     stop)
-        if [ ! -f $PIDFILE ]
+        if [ ! -f "$PIDFILE" ]
         then
                 echo "$PIDFILE does not exist, process is not running"
         else
-                PID=$(cat $PIDFILE)
-                echo "Stopping ..."
-                $CLIEXEC -p $REDISPORT shutdown
+                PID=$(cat "$PIDFILE")
+                echo "Stopping on port $REDISPORT ..."
+                $CLIEXEC -h $REDISBIND -p $REDISPORT shutdown
                 while [ -x /proc/${PID} ]
                 do
-                    echo "Waiting for Redis to shutdown ..."
-                    sleep 1
+                    echo "Waiting for Redis to shutdown on port $REDISPORT ..."
+                    sleep 2
                 done
-                echo "Redis stopped"
+                echo "Redis stopped on port $REDISPORT"
         fi
         ;;
     *)
-        echo "Please use start or stop as first argument"
+        echo "Please use start, stop, or status as first argument"
         ;;
 esac
+
